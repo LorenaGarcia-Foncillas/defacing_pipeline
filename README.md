@@ -34,9 +34,9 @@ manual affine transform [Transform_to_template.txt](data/example_input_images/IX
 to explain how the pipeline deals with previously failed defacing attempts. How to create the manual transform is explained
 further down.
 
-The [template image](data/mean_reg2mean.nii.gz) and 
-the [template mask](data/facemask.nii.gz) were taken from 
-[PyDeface](https://github.com/poldracklab/pydeface).
+The [template image](data/icbm152_ext55_model_sym_2020_nifti/icbm152_ext55_model_sym_2020/mni_icbm152_t1_tal_nlin_sym_55_ext.nii) used in this project is sourced from the [ICBM 152 Extended Nonlinear Atlases (2020)](https://nist.mni.mcgill.ca/icbm-152-extended-nonlinear-atlases-2020/).
+
+The [template mask](data/icbm152_ext55_model_sym_2020_nifti/icbm152_ext55_model_sym_2020/t1_mask.nii.gz) was generated using [ITK-SNAP](http://www.itksnap.org) to remove facial features while retaining as much clinical information as possible.
 
 All outputs are written to the [example_output](data/example_output) directory. If you want to rerun the example, 
 delete the contents of the directory first, because the notebook will not overwrite existing files.
