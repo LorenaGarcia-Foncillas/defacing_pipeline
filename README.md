@@ -34,9 +34,9 @@ manual affine transform [Transform_to_template.txt](data/example_input_images/IX
 to explain how the pipeline deals with previously failed defacing attempts. How to create the manual transform is explained
 further down.
 
-The [template image](data/mean_reg2mean.nii.gz) and 
-the [template mask](data/facemask.nii.gz) were taken from 
-[PyDeface](https://github.com/poldracklab/pydeface).
+The [template image](data/icbm152_ext55_model_sym_2020_nifti/icbm152_ext55_model_sym_2020/mni_icbm152_t1_tal_nlin_sym_55_ext.nii) used in this project is sourced from the [ICBM 152 Extended Nonlinear Atlases (2020)](https://nist.mni.mcgill.ca/icbm-152-extended-nonlinear-atlases-2020/).
+
+The [template mask](data/icbm152_ext55_model_sym_2020_nifti/icbm152_ext55_model_sym_2020/t1_mask.nii.gz) was generated using [ITK-SNAP](http://www.itksnap.org) to remove facial features while retaining as much clinical information as possible.
 
 All outputs are written to the [example_output](data/example_output) directory. If you want to rerun the example, 
 delete the contents of the directory first, because the notebook will not overwrite existing files.
@@ -132,3 +132,13 @@ Make sure to replace `<Slicer_dir>` and `<version>` with the correct values.
 5. Now the BRAINSFit and BRAINSResample binaries should be able to find the shared libraries and run successfully.
 
 
+## Alternative Registration and Defacing with HD-BET
+
+An alternative approach to the pipeline is outlined in the Jupyter notebook [[1]deface_skullstripping.ipynb]. This method involves several additional steps for improved defacing:
+
+1. **Reorientation**: Scans are first reoriented to MNI152 space using the **[FSL Installation Guide]**(https://fsl.fmrib.ox.ac.uk/fsl/docs/#/).
+2. **Skull-stripping**: Skull-stripping is then performed on these reoriented scans using **[HD-BET GitHub repository]**(https://github.com/MIC-DKFZ/HD-BET).
+3. **Mask Dilation**: The resulting binary brain mask from the skull-stripping process is dilated.
+4. **New Skull-stripped Scan**: A new skull-stripped scan is generated using the dilated mask.
+
+The registration and defacing steps follow as described earlier, but with the key difference that the input scans are the reoriented ones, and the dilated brain mask is used. This ensures that no brain structures are removed during the defacing process.

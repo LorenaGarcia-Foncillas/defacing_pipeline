@@ -1,0 +1,3 @@
+input,hd_bet,mask,dilated
+./data/example_input_images/IXI002-Guys-0828-T1/reoriented_IXI002-Guys-0828-T1.nii.gz,success,success,success
+./data/example_input_images/IXI002-Guys-0828-T2/reoriented_IXI002-Guys-0828-T2.nii.gz,success,success,success
