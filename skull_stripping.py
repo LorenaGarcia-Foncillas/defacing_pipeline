@@ -65,7 +65,10 @@ def process_nifti(input_file, main_folder, output_folder, device="cpu", disable_
             
             # Generate binary mask
             binary_volume = (data > 0).astype(np.uint8)
-            nib.save(nib.Nifti1Image(binary_volume, img.affine, img.header), mask_file)
+            # Dilate
+            struct_elem = np.ones((14, 14, 14))
+            dilated_data = binary_dilation(binary_volume, structure=struct_elem)
+            nib.save(nib.Nifti1Image(dilated_data, img.affine, img.header), mask_file)            
             
             if os.path.exists(mask_file):
                 status["mask"] = "success"
@@ -74,17 +77,17 @@ def process_nifti(input_file, main_folder, output_folder, device="cpu", disable_
 
         # Apply dilation if it doesn't exist
         if not os.path.exists(dilated_file):
+            # Load mask 
             mask_img = nib.load(mask_file)
             mask_data = mask_img.get_fdata()
+            mask_data = (mask_data > 0).astype(np.uint8)
 
-            struct_elem = np.ones((7, 7, 7))
-            dilated_data = binary_dilation(mask_data, structure=struct_elem)
-
-            # Apply dilated mask to the original volume
+            # Load original scan
             original_img = nib.load(input_file)
             original_data = original_img.get_fdata()
 
-            dilated_volume = original_data * dilated_data
+            # Apply dilated mask to the original volume
+            dilated_volume = original_data * mask_data
             nib.save(nib.Nifti1Image(dilated_volume, original_img.affine, original_img.header), dilated_file)
 
             if os.path.exists(dilated_file):
