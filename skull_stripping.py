@@ -13,6 +13,14 @@ def check_hd_bet():
         return False
     return True
 
+def get_safe_structuring_element(voxel_sizes, desired_dilation_mm, max_kernel_shape=(30, 30, 30)):
+    struct_elem_shape = tuple(
+        min(max_kernel, max(1, int(round(desired_dilation_mm / vs))))
+        for vs, max_kernel in zip(voxel_sizes, max_kernel_shape)
+    )
+    print(f"Structuring element shape: {struct_elem_shape}")
+    return np.ones(struct_elem_shape, dtype=np.uint8)
+
 def process_nifti(input_file, main_folder, output_folder, device="cpu", disable_tta=True):
     """
     Process a single NIfTI file through HD-BET, generate binary mask, and apply dilation.
@@ -51,48 +59,87 @@ def process_nifti(input_file, main_folder, output_folder, device="cpu", disable_
             if disable_tta:
                 command.append("--disable_tta")
 
-            subprocess.run(command, check=True, capture_output=True, text=True)
-            
-            if os.path.exists(hd_bet_file):
-                status["hd_bet"] = "success"
-            else:
+            try:
+                subprocess.run(command, check=True, capture_output=True, text=True)
+            except subprocess.CalledProcessError as e:
+                print(f"hd-bet failed for {input_file} with error:\n{e.stderr}")
                 status["hd_bet"] = "failed"
+                return {
+                    "input": input_file,
+                    "hd_bet": "failed",
+                    "mask": "skipped",
+                    "dilated": "skipped",
+                    "error_message": e.stderr
+                }
 
         # Create binary mask if it doesn't exist
         if not os.path.exists(mask_file):
-            img = nib.load(hd_bet_file)
-            data = img.get_fdata()
-            
-            # Generate binary mask
-            binary_volume = (data > 0).astype(np.uint8)
-            # Dilate
-            struct_elem = np.ones((14, 14, 14))
-            dilated_data = binary_dilation(binary_volume, structure=struct_elem)
-            nib.save(nib.Nifti1Image(dilated_data, img.affine, img.header), mask_file)            
-            
-            if os.path.exists(mask_file):
-                status["mask"] = "success"
-            else:
+            try:
+                img = nib.load(hd_bet_file)
+                data = img.get_fdata()
+                voxel_sizes = img.header.get_zooms()[:3]  # (x, y, z) voxel spacing in mm
+
+                # Define desired dilation in mm (real-world units)
+                desired_dilation_mm = 14.0  # You can adapt this dynamically if needed
+                
+                # Calculate structuring element shape in voxels
+                struct_elem_shape = tuple(
+                    max(1, int(np.round(desired_dilation_mm / vs)))
+                    for vs in voxel_sizes
+                )
+                
+                # Create anisotropic structuring element
+                # struct_elem = np.ones(struct_elem_shape, dtype=np.uint8)
+                struct_elem = get_safe_structuring_element(voxel_sizes, desired_dilation_mm)
+
+                
+                # Generate binary mask and dilate
+                binary_volume = (data > 0).astype(np.uint8)
+                dilated_data = binary_dilation(binary_volume, structure=struct_elem)
+                
+                # # Generate binary mask
+                # binary_volume = (data > 0).astype(np.uint8)
+                # # Dilate
+                # struct_elem = np.ones((14, 14, 14))
+                # dilated_data = binary_dilation(binary_volume, structure=struct_elem)
+                nib.save(nib.Nifti1Image(dilated_data, img.affine, img.header), mask_file)            
+                
+                if os.path.exists(mask_file):
+                    status["mask"] = "success"
+                else:
+                    status["mask"] = "failed"
+            except MemoryError:
+                print(f"MemoryError during mask creation for {input_file}")
                 status["mask"] = "failed"
+                return {
+                    "input": input_file,
+                    "hd_bet": status["hd_bet"],
+                    "mask": status["mask"],
+                    "dilated": "skipped"
+                }
 
         # Apply dilation if it doesn't exist
         if not os.path.exists(dilated_file):
-            # Load mask 
-            mask_img = nib.load(mask_file)
-            mask_data = mask_img.get_fdata()
-            mask_data = (mask_data > 0).astype(np.uint8)
+            try:
+                # Load mask 
+                mask_img = nib.load(mask_file)
+                mask_data = mask_img.get_fdata()
+                mask_data = (mask_data > 0).astype(np.uint8)
 
-            # Load original scan
-            original_img = nib.load(input_file)
-            original_data = original_img.get_fdata()
+                # Load original scan
+                original_img = nib.load(input_file)
+                original_data = original_img.get_fdata()
 
-            # Apply dilated mask to the original volume
-            dilated_volume = original_data * mask_data
-            nib.save(nib.Nifti1Image(dilated_volume, original_img.affine, original_img.header), dilated_file)
+                # Apply dilated mask to the original volume
+                dilated_volume = original_data * mask_data
+                nib.save(nib.Nifti1Image(dilated_volume, original_img.affine, original_img.header), dilated_file)
 
-            if os.path.exists(dilated_file):
-                status["dilated"] = "success"
-            else:
+                if os.path.exists(dilated_file):
+                    status["dilated"] = "success"
+                else:
+                    status["dilated"] = "failed"
+            except MemoryError:
+                print(f"MemoryError during volume masking for {input_file}")
                 status["dilated"] = "failed"
 
     except Exception as e:
@@ -138,7 +185,7 @@ def run_hd_bet(main_folder, output_folder, device="cpu", disable_tta=True):
 
     # Save log
     df = pd.DataFrame(log_data)
-    log_file = os.path.join(output_folder, "hd_bet_log.csv")
+    log_file = os.path.join(output_folder, "hd_bet_log_dynamic_dilation.csv")
     
     if os.path.exists(log_file):
         # Append to existing log
