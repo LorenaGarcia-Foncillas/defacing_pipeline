@@ -14,6 +14,26 @@ def check_hd_bet():
     return True
 
 def get_safe_structuring_element(voxel_sizes, desired_dilation_mm, max_kernel_shape=(30, 30, 30)):
+    """
+    Compute a 3D structuring element (binary cube) for morphological operations like dilation,
+    with a shape dynamically adapted to the voxel sizes of the image, ensuring a consistent 
+    physical dilation distance in millimetres.
+
+    Parameters:
+    -----------
+    voxel_sizes : tuple of float
+        The spacing (in mm) along each of the three image dimensions (x, y, z).
+    desired_dilation_mm : float
+        The desired physical dilation size in millimetres.
+    max_kernel_shape : tuple of int, optional
+        The maximum allowed size (in voxels) of the structuring element along each axis.
+        Default is (30, 30, 30).
+
+    Returns:
+    --------
+    structuring_element : numpy.ndarray
+        A 3D binary numpy array (dtype=uint8) with the computed shape.
+    """
     struct_elem_shape = tuple(
         min(max_kernel, max(1, int(round(desired_dilation_mm / vs))))
         for vs, max_kernel in zip(voxel_sizes, max_kernel_shape)
@@ -82,26 +102,14 @@ def process_nifti(input_file, main_folder, output_folder, device="cpu", disable_
                 # Define desired dilation in mm (real-world units)
                 desired_dilation_mm = 14.0  # You can adapt this dynamically if needed
                 
-                # Calculate structuring element shape in voxels
-                struct_elem_shape = tuple(
-                    max(1, int(np.round(desired_dilation_mm / vs)))
-                    for vs in voxel_sizes
-                )
-                
-                # Create anisotropic structuring element
-                # struct_elem = np.ones(struct_elem_shape, dtype=np.uint8)
+                # Create (an)isotropic structuring element based on voxel size
                 struct_elem = get_safe_structuring_element(voxel_sizes, desired_dilation_mm)
 
                 
                 # Generate binary mask and dilate
                 binary_volume = (data > 0).astype(np.uint8)
                 dilated_data = binary_dilation(binary_volume, structure=struct_elem)
-                
-                # # Generate binary mask
-                # binary_volume = (data > 0).astype(np.uint8)
-                # # Dilate
-                # struct_elem = np.ones((14, 14, 14))
-                # dilated_data = binary_dilation(binary_volume, structure=struct_elem)
+            
                 nib.save(nib.Nifti1Image(dilated_data, img.affine, img.header), mask_file)            
                 
                 if os.path.exists(mask_file):
