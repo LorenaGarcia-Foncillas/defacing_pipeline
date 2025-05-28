@@ -142,3 +142,20 @@ An alternative approach to the pipeline is outlined in the Jupyter notebook [[1]
 4. **New Skull-stripped Scan**: A new skull-stripped scan is generated using the dilated mask.
 
 The registration and defacing steps follow as described earlier, but with the key difference that the input scans are the reoriented ones, and the dilated brain mask is used. This ensures that no brain structures are removed during the defacing process.
+
+## How to Cite
+
+If you use this pipeline or codebase in your work, please cite the following paper:
+
+> Lorena Garcia-Foncillas Macias, et al. *A Generalisable Head MRI Defacing Pipeline: Evaluation on 2,566 Meningioma Scans*. 2025. Available at: [https://arxiv.org/abs/2505.12999](https://arxiv.org/abs/2505.12999)
+
+BibTeX:
+```bibtex
+@article{garcia2025defacing,
+  title={A Generalisable Head MRI Defacing Pipeline: Evaluation on 2,566 Meningioma Scans},
+  author={Garcia-Foncillas Macias, Lorena and others},
+  year={2025},
+  eprint={2505.12999},
+  archivePrefix={arXiv},
+  primaryClass={cs.CV}
+}
