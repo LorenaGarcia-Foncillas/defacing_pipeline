@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this codebase, please cite the following work."
+title: "A Generalisable Head MRI Defacing Pipeline: Evaluation on 2,566 Meningioma Scans"
+authors:
+  - family-names: Garcia-Foncillas Macias
+    given-names: Lorena
+  - family-names: Kujawa
+    given-names: Aaron
+  - family-names: Elshalakany
+    given-names: Aya
+  - family-names: Shapey
+    given-names: Jonathan
+  - family-names: Vercauteren
+    given-names: Tom
+date-released: "2025-05-28"
+doi: "10.48550/arXiv.2505.12999"
+url: "https://arxiv.org/abs/2505.12999"
+version: "1.0.0"
