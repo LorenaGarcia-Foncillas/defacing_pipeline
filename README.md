@@ -153,7 +153,7 @@ BibTeX:
 ```bibtex
 @article{garcia2025defacing,
   title={A Generalisable Head MRI Defacing Pipeline: Evaluation on 2,566 Meningioma Scans},
-  author={Garcia-Foncillas Macias, Lorena and others},
+  author={Garcia-Foncillas Macias, Lorena and Kujawa, Aaron and Elshalakany, Aya and Shapey, Jonathan and Vercauteren, Tom},
   year={2025},
   eprint={2505.12999},
   archivePrefix={arXiv},
